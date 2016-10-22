@@ -1,5 +1,3 @@
-
-
 #include "stream_summary.h" 
 #include <iostream> 
 #include <fstream> 
@@ -41,21 +39,43 @@ struct Node_Priority_cmp {
     bool operator() ( const Node * a, const Node * b){
         return (a->bucket->count - a->eps ) >= (b->bucket->count - b->eps);
     } 
-}; 
+};
+
+string extension(const string &filename) {
+    size_t location = filename.rfind('.');
+    string extension = "";
+    if(location != string::npos) {
+        extension = filename.substr(location+1);
+    }
+    return extension;
+}
 
 void stream_kmers(const string& filename, StreamSummary<Node,Node_cmp>& ss, const size_t k){
-    ifstream in(filename); 
-    string line; 
-    size_t c = 0; 
-    while( getline(in, line)){ 
-        if(c % 4 == 1 ){ 
-            for(int i = 0; i < line.size() - k + 1; ++i){
-                ss.update(new Node(line.substr(i, k)));
-            } 
-        } 
-        c++;
-    } 
-} 
+    ifstream in(filename);
+	string ext = extension(filename);
+	string line;
+	if(ext == "fa" || ext == "fasta") {
+		while(getline(in, line)) {
+			if(line[0] == '>') {
+				continue;
+			}
+			for(int i = 0; i < line.length() - k + 1; ++i) {
+				ss.update(new Node(line.substr(i, k)));
+			}
+		}
+	}
+	else {
+    		size_t c = 0; 
+    		while(getline(in, line)) { 
+        		if(c % 4 == 1 ) { 
+            			for(int i = 0; i < line.size() - k + 1; ++i){
+                			ss.update(new Node(line.substr(i, k)));
+            			} 
+			}
+			c++;
+		}
+	}
+}
 
 void print_top(const StreamSummary<Node, Node_cmp>& ss, size_t n){ 
     auto nodes = ss.monitored_nodes(); 
